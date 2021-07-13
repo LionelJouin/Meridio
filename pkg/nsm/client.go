@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/edwarnicke/grpcfd"
+	"github.com/networkservicemesh/api/pkg/api/networkservice"
 	"github.com/networkservicemesh/api/pkg/api/registry"
+	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
 	"github.com/networkservicemesh/sdk/pkg/tools/opentracing"
@@ -54,6 +56,15 @@ func (apiClient *APIClient) GetClientOptions() []grpc.DialOption {
 				),
 			),
 		),
+	)
+}
+
+func (apiClient *APIClient) GetNetworkServiceClient(additionalFunctionality ...networkservice.NetworkServiceClient) networkservice.NetworkServiceClient {
+	return chain.NewNetworkServiceClient(
+		append(
+			additionalFunctionality,
+			networkservice.NewNetworkServiceClient(apiClient.GRPCClient),
+		)...,
 	)
 }
 

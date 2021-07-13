@@ -1,12 +1,24 @@
+/*
+Copyright (c) 2021 Nordix Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package client
 
 import (
-	"context"
-
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
-	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
-	"github.com/nordix/meridio/pkg/nsm"
 )
 
 func expirationTimeIsNull(expirationTime *timestamp.Timestamp) bool {
@@ -14,15 +26,6 @@ func expirationTimeIsNull(expirationTime *timestamp.Timestamp) bool {
 		Seconds: -1,
 	}
 	return expirationTime == nil || expirationTime.AsTime().Equal(nullTImeStamp.AsTime())
-}
-
-func newClient(ctx context.Context, name string, nsmAPIClient *nsm.APIClient, additionalFunctionality ...networkservice.NetworkServiceClient) networkservice.NetworkServiceClient {
-	return chain.NewNetworkServiceClient(
-		append(
-			additionalFunctionality,
-			networkservice.NewNetworkServiceClient(nsmAPIClient.GRPCClient),
-		)...,
-	)
 }
 
 func copyRequest(request *networkservice.NetworkServiceRequest) *networkservice.NetworkServiceRequest {

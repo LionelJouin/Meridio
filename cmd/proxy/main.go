@@ -92,15 +92,11 @@ func main() {
 	}
 	nsmAPIClient := nsm.NewAPIClient(ctx, apiClientConfig)
 
-	clientConfig := &client.Config{
-		Name:           config.Name,
-		RequestTimeout: config.RequestTimeout,
-		ConnectTo:      config.ConnectTo,
-	}
 	interfaceMonitorClient := interfacemonitor.NewClient(interfaceMonitor, p, netUtils)
-	client := getNSC(ctx, clientConfig, nsmAPIClient, p, interfaceMonitorClient)
-	defer client.Close()
-	go startNSC(client, config.NetworkServiceName)
+	networkServiceClient := getNSC(config.Name, nsmAPIClient, p, interfaceMonitorClient)
+	pointToMultiPointClient := client.NewPointToMultiPoint(networkServiceClient, nsmAPIClient.NetworkServiceEndpointRegistryClient, nil)
+	defer pointToMultiPointClient.Close(context.Background())
+	go startNSC(pointToMultiPointClient, config.NetworkServiceName)
 
 	labels := map[string]string{}
 	if config.Host != "" {
@@ -150,14 +146,12 @@ func getProxySubnets(config Config) ([]string, error) {
 	return proxySubnets, nil
 }
 
-func getNSC(ctx context.Context,
-	config *client.Config,
+func getNSC(name string,
 	nsmAPIClient *nsm.APIClient,
 	p *proxy.Proxy,
-	interfaceMonitorClient networkservice.NetworkServiceClient) client.NetworkServiceClient {
-
+	interfaceMonitorClient networkservice.NetworkServiceClient) networkservice.NetworkServiceClient {
 	networkServiceClient := chain.NewNetworkServiceClient(
-		updatepath.NewClient(config.Name),
+		updatepath.NewClient(name),
 		serialize.NewClient(),
 		sriovtoken.NewClient(),
 		mechanisms.NewClient(map[string]networkservice.NetworkServiceClient{
@@ -170,12 +164,11 @@ func getNSC(ctx context.Context,
 		authorize.NewClient(),
 		sendfd.NewClient(),
 	)
-	fullMeshClient := client.NewFullMeshNetworkServiceClient(config, nsmAPIClient, networkServiceClient)
-	return fullMeshClient
+	return nsmAPIClient.GetNetworkServiceClient(networkServiceClient)
 }
 
-func startNSC(fullMeshClient client.NetworkServiceClient, networkServiceName string) {
-	err := fullMeshClient.Request(&networkservice.NetworkServiceRequest{
+func startNSC(pointToMultiPoint *client.PointToMultiPoint, networkServiceName string) {
+	request := &networkservice.NetworkServiceRequest{
 		Connection: &networkservice.Connection{
 			NetworkService: networkServiceName,
 			Labels:         map[string]string{"forwarder": "forwarder-vpp"},
@@ -187,7 +180,8 @@ func startNSC(fullMeshClient client.NetworkServiceClient, networkServiceName str
 				Type: kernelmech.MECHANISM,
 			},
 		},
-	})
+	}
+	err := pointToMultiPoint.Request(context.Background(), request)
 	if err != nil {
 		logrus.Fatalf("fullMeshClient.Request err: %+v", err)
 	}

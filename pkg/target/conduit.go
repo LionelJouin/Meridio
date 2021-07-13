@@ -1,6 +1,7 @@
 package target
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
@@ -26,14 +27,14 @@ import (
 
 // Conduit -
 type Conduit struct {
-	name                 string
-	trench               *Trench
-	networkServiceClient client.NetworkServiceClient
-	vips                 []*virtualIP
-	nexthops             []string
-	ips                  []string
-	tableID              int
-	stream               *Stream
+	name               string
+	trench             *Trench
+	pointToPointClient *client.PointToPoint
+	vips               []*virtualIP
+	nexthops           []string
+	ips                []string
+	tableID            int
+	stream             *Stream
 }
 
 func (c *Conduit) Delete() error {
@@ -41,7 +42,7 @@ func (c *Conduit) Delete() error {
 	if err != nil {
 		return err
 	}
-	err = c.networkServiceClient.Close()
+	err = c.pointToPointClient.Close(context.Background())
 	if err != nil {
 		return err
 	}
@@ -92,13 +93,8 @@ func (c *Conduit) getAdditionalFunctionalities() networkservice.NetworkServiceCl
 
 func (c *Conduit) request() error {
 	proxyNetworkServiceName := c.GetNetworkServiceName()
-	clientConfig := &client.Config{
-		Name:           c.GetConfig().nsmConfig.Name,
-		RequestTimeout: c.GetConfig().nsmConfig.RequestTimeout,
-		ConnectTo:      c.GetConfig().nsmConfig.ConnectTo,
-	}
-	c.networkServiceClient = client.NewSimpleNetworkServiceClient(clientConfig, c.GetConfig().apiClient, c.getAdditionalFunctionalities())
-	err := c.networkServiceClient.Request(&networkservice.NetworkServiceRequest{
+	c.pointToPointClient = client.NewPointToPoint(c.GetConfig().apiClient.GetNetworkServiceClient(c.getAdditionalFunctionalities()), 10, 5000, 1000, nil)
+	request := &networkservice.NetworkServiceRequest{
 		Connection: &networkservice.Connection{
 			Id:             fmt.Sprintf("%s-%s-%d", c.GetConfig().nsmConfig.Name, proxyNetworkServiceName, 0),
 			NetworkService: proxyNetworkServiceName,
@@ -111,7 +107,8 @@ func (c *Conduit) request() error {
 				Type: kernelmech.MECHANISM,
 			},
 		},
-	})
+	}
+	err := c.pointToPointClient.Request(context.Background(), request)
 	return err
 }
 

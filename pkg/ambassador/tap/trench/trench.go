@@ -23,9 +23,9 @@ import (
 	"sync"
 
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
+	"github.com/nordix/meridio/pkg/ambassador/tap/types"
 	"github.com/nordix/meridio/pkg/configuration"
 	"github.com/nordix/meridio/pkg/security/credentials"
-	"github.com/nordix/meridio/pkg/target/types"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

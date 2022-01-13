@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package target
+package tap
 
 import (
+	targetAPI "github.com/nordix/meridio/api/ambassador/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-	targetAPI "github.com/nordix/meridio/api/target/v1"
-	"github.com/nordix/meridio/pkg/target/types"
+	"github.com/nordix/meridio/pkg/ambassador/tap/types"
 )
 
 type conduitWatcher struct {

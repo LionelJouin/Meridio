@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package target
+package tap
 
 import (
 	"context"
@@ -26,13 +26,13 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	targetAPI "github.com/nordix/meridio/api/ambassador/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-	targetAPI "github.com/nordix/meridio/api/target/v1"
+	"github.com/nordix/meridio/pkg/ambassador/tap/conduit"
+	"github.com/nordix/meridio/pkg/ambassador/tap/stream"
+	"github.com/nordix/meridio/pkg/ambassador/tap/trench"
+	"github.com/nordix/meridio/pkg/ambassador/tap/types"
 	"github.com/nordix/meridio/pkg/nsm"
-	"github.com/nordix/meridio/pkg/target/conduit"
-	"github.com/nordix/meridio/pkg/target/stream"
-	"github.com/nordix/meridio/pkg/target/trench"
-	"github.com/nordix/meridio/pkg/target/types"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"

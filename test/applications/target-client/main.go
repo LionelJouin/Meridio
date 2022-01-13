@@ -25,8 +25,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	targetAPI "github.com/nordix/meridio/api/ambassador/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-	targetAPI "github.com/nordix/meridio/api/target/v1"
 	"google.golang.org/grpc"
 )
 

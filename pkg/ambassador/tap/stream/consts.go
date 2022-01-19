@@ -16,6 +16,9 @@ limitations under the License.
 
 package stream
 
+import "time"
+
 const (
-	maxNumberOfTargets = 100
+	MaxNumberOfTargets = 100
+	PendingTime        = 15 * time.Second
 )

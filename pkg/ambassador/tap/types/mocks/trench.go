@@ -37,11 +37,12 @@ func (m *MockTrench) EXPECT() *MockTrenchMockRecorder {
 }
 
 // AddConduit mocks base method.
-func (m *MockTrench) AddConduit(arg0 context.Context, arg1 types.Conduit) error {
+func (m *MockTrench) AddConduit(arg0 context.Context, arg1 *v1.Conduit) (types.Conduit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddConduit", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(types.Conduit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AddConduit indicates an expected call of AddConduit.
@@ -79,63 +80,21 @@ func (mr *MockTrenchMockRecorder) Equals(arg0 interface{}) *gomock.Call {
 }
 
 // GetConduits mocks base method.
-func (m *MockTrench) GetConduits(conduit *v1.Conduit) []types.Conduit {
+func (m *MockTrench) GetConduits(arg0 context.Context) []types.Conduit {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConduits", conduit)
+	ret := m.ctrl.Call(m, "GetConduits", arg0)
 	ret0, _ := ret[0].([]types.Conduit)
 	return ret0
 }
 
 // GetConduits indicates an expected call of GetConduits.
-func (mr *MockTrenchMockRecorder) GetConduits(conduit interface{}) *gomock.Call {
+func (mr *MockTrenchMockRecorder) GetConduits(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConduits", reflect.TypeOf((*MockTrench)(nil).GetConduits), conduit)
-}
-
-// GetName mocks base method.
-func (m *MockTrench) GetName() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetName")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetName indicates an expected call of GetName.
-func (mr *MockTrenchMockRecorder) GetName() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockTrench)(nil).GetName))
-}
-
-// GetNamespace mocks base method.
-func (m *MockTrench) GetNamespace() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespace")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetNamespace indicates an expected call of GetNamespace.
-func (mr *MockTrenchMockRecorder) GetNamespace() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockTrench)(nil).GetNamespace))
-}
-
-// GetTargetRegistryClient mocks base method.
-func (m *MockTrench) GetTargetRegistryClient() v1.TargetRegistryClient {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTargetRegistryClient")
-	ret0, _ := ret[0].(v1.TargetRegistryClient)
-	return ret0
-}
-
-// GetTargetRegistryClient indicates an expected call of GetTargetRegistryClient.
-func (mr *MockTrenchMockRecorder) GetTargetRegistryClient() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetRegistryClient", reflect.TypeOf((*MockTrench)(nil).GetTargetRegistryClient))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConduits", reflect.TypeOf((*MockTrench)(nil).GetConduits), arg0)
 }
 
 // RemoveConduit mocks base method.
-func (m *MockTrench) RemoveConduit(arg0 context.Context, arg1 types.Conduit) error {
+func (m *MockTrench) RemoveConduit(arg0 context.Context, arg1 *v1.Conduit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveConduit", arg0, arg1)
 	ret0, _ := ret[0].(error)

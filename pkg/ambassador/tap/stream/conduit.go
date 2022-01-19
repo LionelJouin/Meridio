@@ -14,19 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package types
+package stream
 
-import (
-	"context"
-
-	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-)
-
-type Trench interface {
-	Delete(ctx context.Context) error
-	AddConduit(context.Context, *nspAPI.Conduit) (Conduit, error)
-	RemoveConduit(context.Context, *nspAPI.Conduit) error
-	GetConduits() []Conduit
-	GetConduit(*nspAPI.Conduit) Conduit
-	Equals(*nspAPI.Trench) bool
+type Conduit interface {
+	GetIPs() []string
 }

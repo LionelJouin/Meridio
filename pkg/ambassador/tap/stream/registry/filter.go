@@ -14,19 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package types
+package registry
 
 import (
-	"context"
-
+	ambassadorAPI "github.com/nordix/meridio/api/ambassador/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
 )
 
-type Trench interface {
-	Delete(ctx context.Context) error
-	AddConduit(context.Context, *nspAPI.Conduit) (Conduit, error)
-	RemoveConduit(context.Context, *nspAPI.Conduit) error
-	GetConduits() []Conduit
-	GetConduit(*nspAPI.Conduit) Conduit
-	Equals(*nspAPI.Trench) bool
+func Filter(stream *nspAPI.Stream, streams []*ambassadorAPI.StreamStatus) []*ambassadorAPI.StreamStatus {
+	if stream == nil {
+		return streams
+	}
+	result := []*ambassadorAPI.StreamStatus{}
+	for _, s := range streams {
+		if nspAPI.StreamFilter(stream, s.Stream) {
+			result = append(result, s)
+		}
+	}
+	return result
 }

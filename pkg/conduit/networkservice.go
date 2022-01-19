@@ -14,19 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package types
+package conduit
 
-import (
-	"context"
+import "fmt"
 
-	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-)
+func GetNetworkServiceName(conduit string, trench string, namespace string) string {
+	return fmt.Sprintf("%s.%s.%s", conduit, trench, namespace)
+}
 
-type Trench interface {
-	Delete(ctx context.Context) error
-	AddConduit(context.Context, *nspAPI.Conduit) (Conduit, error)
-	RemoveConduit(context.Context, *nspAPI.Conduit) error
-	GetConduits() []Conduit
-	GetConduit(*nspAPI.Conduit) Conduit
-	Equals(*nspAPI.Trench) bool
+func GetNetworkServiceNameWithProxy(conduit string, trench string, namespace string) string {
+	return fmt.Sprintf("%s.%s.%s.%s", proxyPrefix, conduit, trench, namespace)
 }

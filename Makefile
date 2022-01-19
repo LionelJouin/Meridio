@@ -90,3 +90,12 @@ test:
 
 .PHONY: check
 check: lint test
+
+.PHONY: mocks
+mocks:
+	mockgen -source=./api/nsp/v1/targetregistry.pb.go -destination=./api/nsp/v1/mocks/targetregistry.go -package=mocks
+	mockgen -source=./pkg/ambassador/tap/types/conduit.go -destination=./pkg/ambassador/tap/types/mocks/conduit.go -package=mocks
+	mockgen -source=./pkg/ambassador/tap/types/trench.go -destination=./pkg/ambassador/tap/types/mocks/trench.go -package=mocks
+	mockgen -source=./pkg/ambassador/tap/types/registry.go -destination=./pkg/ambassador/tap/types/mocks/registry.go -package=mocks
+	mockgen -source=./pkg/ambassador/tap/stream/conduit.go -destination=./pkg/ambassador/tap/stream/mocks/conduit.go -package=mocks
+

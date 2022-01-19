@@ -19,14 +19,18 @@ package types
 import (
 	"context"
 
+	ambassadorAPI "github.com/nordix/meridio/api/ambassador/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
 )
 
-type Trench interface {
-	Delete(ctx context.Context) error
-	AddConduit(context.Context, *nspAPI.Conduit) (Conduit, error)
-	RemoveConduit(context.Context, *nspAPI.Conduit) error
-	GetConduits() []Conduit
-	GetConduit(*nspAPI.Conduit) Conduit
-	Equals(*nspAPI.Trench) bool
+type Registry interface {
+	Add(context.Context, *nspAPI.Stream) error
+	Remove(context.Context, *nspAPI.Stream) error
+	SetStatus(*nspAPI.Stream, ambassadorAPI.StreamStatus_Status)
+	Watch(context.Context, *nspAPI.Stream) (Watcher, error)
+}
+
+type Watcher interface {
+	Stop()
+	ResultChan() <-chan []*ambassadorAPI.StreamStatus
 }

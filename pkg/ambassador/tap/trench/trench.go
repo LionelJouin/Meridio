@@ -18,200 +18,184 @@ package trench
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
+	"github.com/networkservicemesh/api/pkg/api/networkservice"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
+	"github.com/nordix/meridio/pkg/ambassador/tap/conduit"
 	"github.com/nordix/meridio/pkg/ambassador/tap/types"
-	"github.com/nordix/meridio/pkg/configuration"
+	"github.com/nordix/meridio/pkg/networking"
+	"github.com/nordix/meridio/pkg/nsp"
 	"github.com/nordix/meridio/pkg/security/credentials"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 type Trench struct {
-	Name                 string
-	NSPClient            nspAPI.TargetRegistryClient
-	Namespace            string
-	context              context.Context
-	cancel               context.CancelFunc
-	conduits             []types.Conduit
-	vips                 []string
-	configurationWatcher *configuration.OperatorWatcher
-	configWatcher        <-chan *configuration.OperatorConfig
-	mu                   sync.Mutex
-	nspServiceName       string
-	nspServicePort       int
-	nspConn              *grpc.ClientConn
+	Trench                     *nspAPI.Trench
+	TargetName                 string
+	Namespace                  string
+	ConfigurationManagerClient nspAPI.ConfigurationManagerClient
+	TargetRegistryClient       nspAPI.TargetRegistryClient
+	NetworkServiceClient       networkservice.NetworkServiceClient
+	StreamRegistry             types.Registry
+	NetUtils                   networking.Utils
+	nspConn                    *grpc.ClientConn
+	conduits                   []types.Conduit
+	mu                         sync.Mutex
 }
 
-func New(
-	name string,
+func New(trench *nspAPI.Trench,
+	targetName string,
 	namespace string,
-	configMapName string,
+	networkServiceClient networkservice.NetworkServiceClient,
+	streamRegistry types.Registry,
 	nspServiceName string,
-	nspServicePort int) (types.Trench, error) {
+	nspServicePort int,
+	netUtils networking.Utils) (*Trench, error) {
 
-	configMapName = fmt.Sprintf("%s-%s", configMapName, name)
-	configWatcher := make(chan *configuration.OperatorConfig, 10)
-	configurationWatcher := configuration.NewOperatorWatcher(configMapName, namespace, configWatcher)
-	go configurationWatcher.Start()
-
-	context, cancel := context.WithCancel(context.Background())
-
-	trench := &Trench{
-		context:              context,
-		cancel:               cancel,
-		Name:                 name,
+	t := &Trench{
+		TargetName:           targetName,
 		Namespace:            namespace,
+		Trench:               trench,
+		NetworkServiceClient: networkServiceClient,
+		StreamRegistry:       streamRegistry,
+		NetUtils:             netUtils,
 		conduits:             []types.Conduit{},
-		vips:                 []string{},
-		configurationWatcher: configurationWatcher,
-		configWatcher:        configWatcher,
-		nspServiceName:       nspServiceName,
-		nspServicePort:       nspServicePort,
 	}
 
-	err := trench.connectNSPService()
+	var err error
+	t.nspConn, err = t.connectNSPService(context.TODO(), nspServiceName, nspServicePort)
 	if err != nil {
 		return nil, err
 	}
-
-	go trench.watchConfig()
-
-	return trench, nil
-}
-
-func (t *Trench) GetName() string {
-	return t.Name
-}
-
-func (t *Trench) GetNamespace() string {
-	return t.Namespace
+	t.ConfigurationManagerClient = nspAPI.NewConfigurationManagerClient(t.nspConn)
+	t.TargetRegistryClient = nspAPI.NewTargetRegistryClient(t.nspConn)
+	return t, nil
 }
 
 func (t *Trench) Delete(ctx context.Context) error {
-	t.cancel()
-	t.nspConn.Close()
-	t.configurationWatcher.Delete()
-	for _, conduit := range t.conduits {
-		err := t.RemoveConduit(ctx, conduit)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (t *Trench) AddConduit(ctx context.Context, conduit types.Conduit) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	index := t.getIndex(conduit.GetName())
-	if index >= 0 {
-		return errors.New("this conduit is already connected")
-	}
-	err := conduit.Connect(ctx)
+	var errFinal error
+	var err error
+	// todo: delete streams in conduits
+	err = t.disconnectConduits(ctx)
 	if err != nil {
-		return err
+		errFinal = fmt.Errorf("%w; %v", errFinal, err) // todo
 	}
-	err = conduit.SetVIPs(t.vips)
+	t.conduits = []types.Conduit{}
+	err = t.nspConn.Close()
 	if err != nil {
-		return err // todo: disconnect
+		errFinal = fmt.Errorf("%w; %v", errFinal, err) // todo
 	}
-	t.conduits = append(t.conduits, conduit)
-	return nil
+	t.ConfigurationManagerClient = nil
+	t.TargetRegistryClient = nil
+	t.nspConn = nil
+	return errFinal
 }
 
-func (t *Trench) RemoveConduit(ctx context.Context, conduit types.Conduit) error {
+func (t *Trench) AddConduit(ctx context.Context, cndt *nspAPI.Conduit) (types.Conduit, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	index := t.getIndex(conduit.GetName())
+	c := t.getConduit(cndt)
+	if c != nil {
+		return c, nil
+	}
+	c, err := conduit.New(cndt,
+		t.TargetName,
+		t.Namespace,
+		t.ConfigurationManagerClient,
+		t.TargetRegistryClient,
+		t.NetworkServiceClient,
+		t.StreamRegistry,
+		t.NetUtils)
+	if err != nil {
+		return nil, err
+	}
+	t.conduits = append(t.conduits, c)
+	return c, c.Connect(ctx)
+}
+
+func (t *Trench) RemoveConduit(ctx context.Context, cndt *nspAPI.Conduit) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	index := t.getConduitIndex(cndt)
 	if index < 0 {
-		return errors.New("this conduit is not connected")
-	}
-	err := conduit.Disconnect(ctx)
-	if err != nil {
 		return nil
 	}
+	c := t.conduits[index]
+	err := c.Disconnect(ctx)
 	t.conduits = append(t.conduits[:index], t.conduits[index+1:]...)
-	return nil
+	return err
 }
 
-func (t *Trench) GetConduits(conduit *nspAPI.Conduit) []types.Conduit {
+func (t *Trench) GetConduits() []types.Conduit {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if conduit == nil {
-		return t.conduits
-	}
-	conduits := []types.Conduit{}
-	for _, c := range t.conduits {
-		if c.GetStatus() == types.Disconnected || !c.Equals(conduit) {
-			continue
-		}
-		conduits = append(conduits, c)
-	}
-	return conduits
+	return t.conduits
 }
 
-func (t *Trench) GetTargetRegistryClient() nspAPI.TargetRegistryClient {
-	return t.NSPClient
+func (t *Trench) GetConduit(conduit *nspAPI.Conduit) types.Conduit {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.getConduit(conduit)
 }
 
 func (t *Trench) Equals(trench *nspAPI.Trench) bool {
-	if trench == nil {
-		return true
-	}
-	name := true
-	if trench.GetName() != "" {
-		name = t.GetName() == trench.GetName()
-	}
-	return name
+	return t.Trench.Equals(trench)
 }
 
-func (t *Trench) getIndex(conduitName string) int {
-	for i, conduit := range t.conduits {
-		if conduit.GetName() == conduitName {
+// todo: fix wait for ready
+func (t *Trench) connectNSPService(ctx context.Context, nspServiceName string, nspServicePort int) (*grpc.ClientConn, error) {
+	service := nsp.GetService(nspServiceName, t.Trench.GetName(), t.Namespace, nspServicePort)
+	logrus.Infof("Connect to NSP Service: %v", service)
+	return grpc.Dial(service,
+		grpc.WithTransportCredentials(
+			credentials.GetClient(ctx),
+		),
+		grpc.WithDefaultCallOptions(
+			grpc.WaitForReady(true),
+		))
+}
+
+func (t *Trench) connectConduits(ctx context.Context) error {
+	var errFinal error
+	for _, conduit := range t.conduits {
+		err := conduit.Connect(ctx)
+		if err != nil {
+			errFinal = fmt.Errorf("%w; %v", errFinal, err) // todo
+		}
+	}
+	return errFinal
+}
+
+func (t *Trench) disconnectConduits(ctx context.Context) error {
+	var errFinal error
+	for _, conduit := range t.conduits {
+		err := conduit.Disconnect(ctx)
+		if err != nil {
+			errFinal = fmt.Errorf("%w; %v", errFinal, err) // todo
+		}
+	}
+	return errFinal
+}
+
+func (t *Trench) getConduitIndex(cndt *nspAPI.Conduit) int {
+	for i, c := range t.conduits {
+		equal := c.Equals(cndt)
+		if equal {
 			return i
 		}
 	}
 	return -1
 }
 
-func (t *Trench) watchConfig() {
-	for {
-		select {
-		case config := <-t.configWatcher:
-			t.vips = configuration.AddrListFromVipConfig(config.VIPs)
-			for _, conduit := range t.conduits {
-				err := conduit.SetVIPs(t.vips)
-				if err != nil {
-					logrus.Errorf("Error updating to VIPs for the conduit: %V", err)
-				}
-			}
-		case <-t.context.Done():
-			return
-		}
-	}
-}
-
-func (t *Trench) connectNSPService() error {
-	var err error
-	t.nspConn, err = grpc.Dial(t.getNSPService(),
-		grpc.WithTransportCredentials(
-			credentials.GetClient(context.Background()),
-		),
-		grpc.WithDefaultCallOptions(
-			grpc.WaitForReady(true),
-		))
-	if err != nil {
+func (t *Trench) getConduit(cndt *nspAPI.Conduit) types.Conduit {
+	index := t.getConduitIndex(cndt)
+	if index < 0 {
 		return nil
 	}
-
-	t.NSPClient = nspAPI.NewTargetRegistryClient(t.nspConn)
-	return nil
-}
-
-func (t *Trench) getNSPService() string {
-	return fmt.Sprintf("%s-%s.%s:%d", t.nspServiceName, t.GetName(), t.GetNamespace(), t.nspServicePort)
+	return t.conduits[index]
 }

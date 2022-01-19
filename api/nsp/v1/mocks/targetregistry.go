@@ -9,10 +9,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	v1 "github.com/nordix/meridio/api/nsp/v1"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockTargetRegistryClient is a mock of TargetRegistryClient interface.
@@ -39,14 +39,14 @@ func (m *MockTargetRegistryClient) EXPECT() *MockTargetRegistryClientMockRecorde
 }
 
 // Register mocks base method.
-func (m *MockTargetRegistryClient) Register(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockTargetRegistryClient) Register(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Register", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -59,14 +59,14 @@ func (mr *MockTargetRegistryClientMockRecorder) Register(ctx, in interface{}, op
 }
 
 // Unregister mocks base method.
-func (m *MockTargetRegistryClient) Unregister(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockTargetRegistryClient) Unregister(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Unregister", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,14 +79,14 @@ func (mr *MockTargetRegistryClientMockRecorder) Unregister(ctx, in interface{}, 
 }
 
 // Update mocks base method.
-func (m *MockTargetRegistryClient) Update(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (m *MockTargetRegistryClient) Update(ctx context.Context, in *v1.Target, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Update", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -265,10 +265,10 @@ func (m *MockTargetRegistryServer) EXPECT() *MockTargetRegistryServerMockRecorde
 }
 
 // Register mocks base method.
-func (m *MockTargetRegistryServer) Register(arg0 context.Context, arg1 *v1.Target) (*empty.Empty, error) {
+func (m *MockTargetRegistryServer) Register(arg0 context.Context, arg1 *v1.Target) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -280,10 +280,10 @@ func (mr *MockTargetRegistryServerMockRecorder) Register(arg0, arg1 interface{})
 }
 
 // Unregister mocks base method.
-func (m *MockTargetRegistryServer) Unregister(arg0 context.Context, arg1 *v1.Target) (*empty.Empty, error) {
+func (m *MockTargetRegistryServer) Unregister(arg0 context.Context, arg1 *v1.Target) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unregister", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -295,10 +295,10 @@ func (mr *MockTargetRegistryServerMockRecorder) Unregister(arg0, arg1 interface{
 }
 
 // Update mocks base method.
-func (m *MockTargetRegistryServer) Update(arg0 context.Context, arg1 *v1.Target) (*empty.Empty, error) {
+func (m *MockTargetRegistryServer) Update(arg0 context.Context, arg1 *v1.Target) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
+	ret0, _ := ret[0].(*emptypb.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

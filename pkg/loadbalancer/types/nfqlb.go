@@ -17,8 +17,8 @@ limitations under the License.
 package types
 
 type NFQueueLoadBalancer interface {
-	Activate(identifier int) error
-	Deactivate(identifier int) error
+	Activate(index int, identifier int) error
+	Deactivate(index int) error
 	Start() error
 	Stop() error
 	Delete() error

@@ -36,7 +36,7 @@ type StreamList struct {
 type Stream struct {
 	Name            string `yaml:"name"`
 	Conduit         string `yaml:"conduit"`
-	IdentifierRange *Range `yaml:"identrifier-range"`
+	IdentifierRange *Range `yaml:"identifier-range"`
 }
 
 type FlowList struct {
@@ -97,6 +97,6 @@ type Gateway struct {
 }
 
 type Range struct {
-	Start uint32 `yaml:"Start"`
+	Start uint32 `yaml:"start"`
 	End   uint32 `yaml:"end"`
 }

@@ -14,12 +14,12 @@ data:
     items:
     - name: stream-a
       conduit: {{ .Values.loadBalancer.networkServiceName }}
-      identrifier-range:
+      identifier-range:
         start: 1
         end: 100
     - name: stream-b
       conduit: {{ .Values.loadBalancer.networkServiceName }}
-      identrifier-range:
+      identifier-range:
         start: 101
         end: 200
   flows: |

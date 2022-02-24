@@ -50,7 +50,9 @@ type LoadBalancer struct {
 	defrag                     *Defrag
 }
 
-func New(stream *nspAPI.Stream, targetRegistryClient nspAPI.TargetRegistryClient, configurationManagerClient nspAPI.ConfigurationManagerClient, m int, n int, nfqueue int, netUtils networking.Utils) (types.Stream, error) {
+func New(stream *nspAPI.Stream, targetRegistryClient nspAPI.TargetRegistryClient, configurationManagerClient nspAPI.ConfigurationManagerClient, nfqueue int, netUtils networking.Utils) (types.Stream, error) {
+	n := stream.IdentifierRange.Size()
+	m := stream.IdentifierRange.Size() * 100
 	nfqlb, err := nfqlb.New(stream.GetName(), m, n, nfqueue)
 	if err != nil {
 		return nil, err
@@ -142,7 +144,7 @@ func (lb *LoadBalancer) AddTarget(target types.Target) error {
 		}
 		return returnErr
 	}
-	err = lb.nfqlb.Activate(target.GetIdentifier())
+	err = lb.nfqlb.Activate(target.GetIndex(lb.IdentifierRange), target.GetIdentifier())
 	if err != nil {
 		lb.addPendingTarget(target)
 		returnErr := err
@@ -166,7 +168,7 @@ func (lb *LoadBalancer) RemoveTarget(identifier int) error {
 	}
 	var errFinal error
 	lb.removeFromPendingTarget(target)
-	err := lb.nfqlb.Deactivate(target.GetIdentifier())
+	err := lb.nfqlb.Deactivate(target.GetIndex(lb.IdentifierRange))
 	if err != nil {
 		errFinal = fmt.Errorf("%w; %v", errFinal, err) // todo
 	}

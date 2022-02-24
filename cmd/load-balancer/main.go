@@ -53,11 +53,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	M = 9973
-	N = 100
-)
-
 func main() {
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -385,7 +380,7 @@ func (sns *SimpleNetworkService) addStream(strm *nspAPI.Stream) error {
 	if exists {
 		return errors.New("this stream already exists")
 	}
-	s, err := stream.New(strm, sns.targetRegistryClient, sns.ConfigurationManagerClient, M, N, sns.nfqueueIndex, sns.netUtils)
+	s, err := stream.New(strm, sns.targetRegistryClient, sns.ConfigurationManagerClient, sns.nfqueueIndex, sns.netUtils)
 	if err != nil {
 		return err
 	}

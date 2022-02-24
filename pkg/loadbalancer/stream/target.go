@@ -53,6 +53,13 @@ func (t *Target) GetIdentifier() int {
 	return t.getIdentifier()
 }
 
+func (t *Target) GetIndex(identifierRange *nspAPI.Range) int {
+	if t.getIdentifier() < int(identifierRange.Start) || t.getIdentifier() > int(identifierRange.End) {
+		return -1
+	}
+	return t.getIdentifier() - int(identifierRange.Start)
+}
+
 func (t *Target) Verify() bool {
 	for _, fwMark := range t.fwMarks {
 		if !fwMark.Verify() {

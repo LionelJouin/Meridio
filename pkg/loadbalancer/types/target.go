@@ -16,9 +16,14 @@ limitations under the License.
 
 package types
 
+import (
+	nspAPI "github.com/nordix/meridio/api/nsp/v1"
+)
+
 type Target interface {
 	GetIps() []string
 	GetIdentifier() int
+	GetIndex(*nspAPI.Range) int
 	Configure() error
 	Verify() bool
 	Delete() error

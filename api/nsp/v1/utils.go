@@ -115,3 +115,7 @@ func (vr *VipResponse) ToSlice() []string {
 	}
 	return vipSlice
 }
+
+func (r *Range) Size() int {
+	return int(r.End) - int(r.Start) + 1
+}

@@ -55,12 +55,12 @@ func New(name string, m int, n int, nfqueue int) (*nfqlb, error) {
 	return lb, nil
 }
 
-func (n *nfqlb) Activate(identifier int) error {
+func (n *nfqlb) Activate(index int, identifier int) error {
 	var stderr bytes.Buffer
 	cmd := exec.Command(
 		nfqlbCmd,
 		"activate",
-		fmt.Sprintf("--index=%d", identifier-1),
+		fmt.Sprintf("--index=%d", index),
 		fmt.Sprintf("--shm=%s", n.getTargetSHM()),
 		strconv.Itoa(identifier),
 	)
@@ -72,12 +72,12 @@ func (n *nfqlb) Activate(identifier int) error {
 	return nil
 }
 
-func (n *nfqlb) Deactivate(identifier int) error {
+func (n *nfqlb) Deactivate(index int) error {
 	var stderr bytes.Buffer
 	cmd := exec.Command(
 		nfqlbCmd,
 		"deactivate",
-		fmt.Sprintf("--index=%d", identifier-1),
+		fmt.Sprintf("--index=%d", index),
 		fmt.Sprintf("--shm=%s", n.getTargetSHM()),
 	)
 	cmd.Stderr = &stderr
@@ -154,7 +154,7 @@ func (n *nfqlb) configure() error {
 }
 
 func (n *nfqlb) desactivateAll() error {
-	for i := 1; i <= n.n; i++ {
+	for i := 0; i < n.n; i++ {
 		err := n.Deactivate(i)
 		if err != nil {
 			return err

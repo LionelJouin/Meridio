@@ -36,6 +36,9 @@ message Stream {
     string name = 1;
     // Conduit the stream belongs to
     Conduit conduit = 2;
+    // Range of identifier the target should use to register.
+    // start <= identifier <= end
+    Range identifierRange = 3;
 }
 
 message Flow {
@@ -129,4 +132,9 @@ message AttractorResponse {
 
 message GatewayResponse {
     repeated Gateway gateways = 1;
+}
+
+message Range {
+    uint32 start = 1;
+    uint32 end = 2;
 }

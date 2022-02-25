@@ -48,7 +48,7 @@ type streamManager struct {
 	StreamFactory              StreamFactory
 	Timeout                    time.Duration
 	// list of streams available in the conduit.
-	ConduitStreams map[string]*ambassadorAPI.Stream
+	ConduitStreams map[string]*nspAPI.Stream
 	mu             sync.Mutex
 	status         status
 }
@@ -65,7 +65,7 @@ func NewStreamManager(configurationManagerClient nspAPI.ConfigurationManagerClie
 		StreamRegistry:             streamRegistry,
 		StreamFactory:              streamFactory,
 		Timeout:                    timeout,
-		ConduitStreams:             map[string]*ambassadorAPI.Stream{},
+		ConduitStreams:             map[string]*nspAPI.Stream{},
 		status:                     stopped,
 	}
 	return sm
@@ -96,12 +96,13 @@ func (sm *streamManager) AddStream(strm *ambassadorAPI.Stream) error {
 		sr.setStatus(ambassadorAPI.StreamStatus_UNAVAILABLE)
 		return nil
 	}
-	if !sm.streamExists(sr) {
+	nspStream := sm.getNSPStream(sr)
+	if nspStream == nil {
 		sr.setStatus(ambassadorAPI.StreamStatus_UNDEFINED)
 		return nil
 	}
 	sr.setStatus(ambassadorAPI.StreamStatus_PENDING)
-	go sr.Open()
+	go sr.Open(nspStream)
 	return nil
 }
 
@@ -148,8 +149,9 @@ func (sm *streamManager) SetStreams(streams []*nspAPI.Stream) {
 	}
 	// check streams to open
 	for _, sr := range sm.Streams {
-		if sm.streamExists(sr) {
-			go sr.Open()
+		nspStream := sm.getNSPStream(sr)
+		if nspStream != nil {
+			go sr.Open(nspStream)
 		} else {
 			ctx, cancel := context.WithTimeout(context.TODO(), sr.Timeout)
 			defer cancel()
@@ -162,9 +164,8 @@ func (sm *streamManager) SetStreams(streams []*nspAPI.Stream) {
 	}
 }
 
-func (sm *streamManager) streamExists(sr *streamRetry) bool {
-	_, exists := sm.ConduitStreams[sr.Stream.GetStream().FullName()]
-	return exists
+func (sm *streamManager) getNSPStream(sr *streamRetry) *nspAPI.Stream {
+	return sm.ConduitStreams[sr.Stream.GetStream().FullName()]
 }
 
 // Run open all streams registered and set their
@@ -174,8 +175,9 @@ func (sm *streamManager) Run() {
 	defer sm.mu.Unlock()
 	// open all streams
 	for _, sr := range sm.Streams {
-		if sm.streamExists(sr) {
-			go sr.Open()
+		nspStream := sm.getNSPStream(sr)
+		if nspStream != nil {
+			go sr.Open(nspStream)
 		} else {
 			sr.setStatus(ambassadorAPI.StreamStatus_UNDEFINED)
 		}
@@ -226,7 +228,7 @@ type streamRetry struct {
 // finishes when the stream is successfully opened or when the
 // close function is called.
 // This function is excepted to run as a goroutine.
-func (sr *streamRetry) Open() {
+func (sr *streamRetry) Open(nspStream *nspAPI.Stream) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if sr.getStatus() == ambassadorAPI.StreamStatus_OPEN {
@@ -245,7 +247,7 @@ func (sr *streamRetry) Open() {
 		}
 		openCtx, cancel := context.WithTimeout(ctx, sr.Timeout)
 		defer cancel()
-		err := sr.Stream.Open(openCtx)
+		err := sr.Stream.Open(openCtx, nspStream)
 		if err != nil {
 			logrus.Warnf("error opening stream: %v ; %v", sr.Stream.GetStream(), err)
 			// opened unsuccessfully, set status to UNDEFINED (might be due to lack of identifier, no connection to NSP)
@@ -288,8 +290,8 @@ func (sr *streamRetry) getStatus() ambassadorAPI.StreamStatus_Status {
 	return sr.currentStatus
 }
 
-func convert(streams []*nspAPI.Stream) map[string]*ambassadorAPI.Stream {
-	strms := map[string]*ambassadorAPI.Stream{}
+func convert(streams []*nspAPI.Stream) map[string]*nspAPI.Stream {
+	strms := map[string]*nspAPI.Stream{}
 	for _, stream := range streams {
 		if stream == nil || stream.GetConduit() == nil || stream.GetConduit().GetTrench() == nil {
 			continue
@@ -303,7 +305,7 @@ func convert(streams []*nspAPI.Stream) map[string]*ambassadorAPI.Stream {
 				},
 			},
 		}
-		strms[ambassadorStream.FullName()] = ambassadorStream
+		strms[ambassadorStream.FullName()] = stream
 	}
 	return strms
 }

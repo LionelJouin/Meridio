@@ -79,7 +79,7 @@ func New(conduit *ambassadorAPI.Conduit,
 		vips:                 []*virtualIP{},
 		tableID:              1,
 	}
-	c.StreamFactory = stream.NewFactory(targetRegistryClient, stream.MaxNumberOfTargets, c)
+	c.StreamFactory = stream.NewFactory(targetRegistryClient, c)
 	c.StreamManager = NewStreamManager(configurationManagerClient, targetRegistryClient, streamRegistry, c.StreamFactory, PendingTime)
 	c.Configuration = newConfigurationImpl(c.SetVIPs, c.StreamManager.SetStreams, c.Conduit.ToNSP(), configurationManagerClient)
 	return c, nil

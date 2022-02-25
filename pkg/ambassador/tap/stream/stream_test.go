@@ -46,7 +46,19 @@ func Test_Open_Close(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
+	nspStream := &nspAPI.Stream{
+		Name: s.GetName(),
+		IdentifierRange: &nspAPI.Range{
+			Start: 1,
+			End:   2,
+		},
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 	identifierSelected := "0"
 
 	ctrl := gomock.NewController(t)
@@ -64,8 +76,8 @@ func Test_Open_Close(t *testing.T) {
 		assert.NotEqual(t, identifier, "1")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetStart()))
+		assert.LessOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetEnd()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -85,12 +97,12 @@ func Test_Open_Close(t *testing.T) {
 		return nil
 	})
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 
 	err = strm.Close(context.TODO())
@@ -111,7 +123,19 @@ func Test_Open_NoIdentifierAvailable(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
+	nspStream := &nspAPI.Stream{
+		Name: s.GetName(),
+		IdentifierRange: &nspAPI.Range{
+			Start: 1,
+			End:   2,
+		},
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -120,12 +144,12 @@ func Test_Open_NoIdentifierAvailable(t *testing.T) {
 	cndt.EXPECT().GetIPs().Return(ips).AnyTimes()
 	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1", "2"}), nil).AnyTimes()
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.NotNil(t, err)
 }
 
@@ -143,7 +167,19 @@ func Test_Open_Concurrent(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 3
+	nspStream := &nspAPI.Stream{
+		Name: s.GetName(),
+		IdentifierRange: &nspAPI.Range{
+			Start: 1,
+			End:   3,
+		},
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 	identifierSelected := "0"
 	concurrentIdentifier := "0"
 
@@ -168,8 +204,8 @@ func Test_Open_Concurrent(t *testing.T) {
 		assert.NotEqual(t, identifier, "1")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetStart()))
+		assert.LessOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetEnd()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -182,8 +218,8 @@ func Test_Open_Concurrent(t *testing.T) {
 		assert.NotEqual(t, identifier, "1")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetStart()))
+		assert.LessOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetEnd()))
 		identifierSelected = identifier
 		return nil
 	}).After(firstRegister)
@@ -197,12 +233,12 @@ func Test_Open_Concurrent(t *testing.T) {
 		return nil
 	}).After(secondRegister)
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 }
 
@@ -220,7 +256,19 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
+	nspStream := &nspAPI.Stream{
+		Name: s.GetName(),
+		IdentifierRange: &nspAPI.Range{
+			Start: 1,
+			End:   2,
+		},
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 	identifierSelected := "0"
 	concurrentIdentifier := "0"
 
@@ -244,8 +292,8 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		assert.NotEqual(t, identifier, "1")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetStart()))
+		assert.LessOrEqual(t, identifierInt, int(nspStream.GetIdentifierRange().GetEnd()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -256,12 +304,12 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		return nil
 	})
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.NotNil(t, err)
 }
 

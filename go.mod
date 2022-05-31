@@ -13,16 +13,14 @@ require (
 	github.com/networkservicemesh/api v1.3.1
 	github.com/networkservicemesh/sdk v1.3.1
 	github.com/networkservicemesh/sdk-sriov v1.3.1
-	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.17.0
+	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe/v2 v2.0.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vishvananda/netlink v1.1.1-0.20220118170537-d6b03fdeb845
 	go.uber.org/goleak v1.1.12
-	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7
-	golang.org/x/tools v0.1.9 // indirect
+	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -37,6 +35,7 @@ require (
 require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/jinzhu/now v1.1.3 // indirect
+	github.com/onsi/gomega v1.19.0
 	github.com/open-policy-agent/opa v0.30.1 // indirect
 	go.uber.org/atomic v1.8.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect

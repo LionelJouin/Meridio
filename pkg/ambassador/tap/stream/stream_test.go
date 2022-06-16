@@ -46,7 +46,16 @@ func Test_Open_Close(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 2,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 	identifierSelected := "0"
 
 	ctrl := gomock.NewController(t)
@@ -54,7 +63,7 @@ func Test_Open_Close(t *testing.T) {
 	cndt := mocks.NewMockConduit(ctrl)
 	tr := mocks.NewMockTargetRegistry(ctrl)
 	cndt.EXPECT().GetIPs().Return(ips).AnyTimes()
-	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1"}), nil).AnyTimes()
+	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"0"}), nil).AnyTimes()
 	firstRegister := tr.EXPECT().Register(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, target *nspAPI.Target) error {
 		assert.NotNil(t, target)
 		assert.Equal(t, target.Ips, ips)
@@ -62,11 +71,11 @@ func Test_Open_Close(t *testing.T) {
 		assert.Equal(t, s.ToNSP(), target.Stream)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.NotEqual(t, identifier, "1")
+		assert.NotEqual(t, identifier, "0")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, 0)
+		assert.Less(t, identifierInt, int(nspStream.GetMaxTargets()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -87,12 +96,12 @@ func Test_Open_Close(t *testing.T) {
 		return nil
 	})
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 
 	err = strm.Close(context.TODO())
@@ -113,21 +122,30 @@ func Test_Open_NoIdentifierAvailable(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 2,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cndt := mocks.NewMockConduit(ctrl)
 	tr := mocks.NewMockTargetRegistry(ctrl)
 	cndt.EXPECT().GetIPs().Return(ips).AnyTimes()
-	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1", "2"}), nil).AnyTimes()
+	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"0", "1"}), nil).AnyTimes()
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.NotNil(t, err)
 }
 
@@ -145,21 +163,30 @@ func Test_Open_Concurrent(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 3
 	identifierSelected := "0"
 	concurrentIdentifier := "0"
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 3,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cndt := mocks.NewMockConduit(ctrl)
 	tr := mocks.NewMockTargetRegistry(ctrl)
 	cndt.EXPECT().GetIPs().Return(ips).AnyTimes()
-	firstGet := tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1"}), nil)
+	firstGet := tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"0"}), nil)
 	secondGet := tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, target *nspAPI.Target) ([]*nspAPI.Target, error) {
 		concurrentIdentifier = identifierSelected
-		return getTargets([]string{"1", concurrentIdentifier, identifierSelected}), nil
+		return getTargets([]string{"0", concurrentIdentifier, identifierSelected}), nil
 	}).After(firstGet)
-	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1", concurrentIdentifier, identifierSelected}), nil).After(secondGet)
+	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"0", concurrentIdentifier, identifierSelected}), nil).After(secondGet)
 
 	firstRegister := tr.EXPECT().Register(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, target *nspAPI.Target) error {
 		assert.NotNil(t, target)
@@ -167,11 +194,11 @@ func Test_Open_Concurrent(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.NotEqual(t, identifier, "1")
+		assert.NotEqual(t, identifier, "0")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, 0)
+		assert.Less(t, identifierInt, int(nspStream.GetMaxTargets()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -181,11 +208,11 @@ func Test_Open_Concurrent(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.NotEqual(t, identifier, "1")
+		assert.NotEqual(t, identifier, "0")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, 0)
+		assert.Less(t, identifierInt, int(nspStream.GetMaxTargets()))
 		identifierSelected = identifier
 		return nil
 	}).After(firstRegister)
@@ -199,12 +226,12 @@ func Test_Open_Concurrent(t *testing.T) {
 		return nil
 	}).After(secondRegister)
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 }
 
@@ -222,19 +249,28 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 2
 	identifierSelected := "0"
 	concurrentIdentifier := "0"
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 2,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cndt := mocks.NewMockConduit(ctrl)
 	tr := mocks.NewMockTargetRegistry(ctrl)
 	cndt.EXPECT().GetIPs().Return(ips).AnyTimes()
-	firstGet := tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"1"}), nil)
+	firstGet := tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return(getTargets([]string{"0"}), nil)
 	tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, target *nspAPI.Target) ([]*nspAPI.Target, error) {
 		concurrentIdentifier = identifierSelected
-		return getTargets([]string{"1", concurrentIdentifier, identifierSelected}), nil
+		return getTargets([]string{"0", concurrentIdentifier, identifierSelected}), nil
 	}).After(firstGet)
 
 	tr.EXPECT().Register(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, target *nspAPI.Target) error {
@@ -243,11 +279,11 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.NotEqual(t, identifier, "1")
+		assert.NotEqual(t, identifier, "0")
 		identifierInt, err := strconv.Atoi(identifier)
 		assert.Nil(t, err)
-		assert.Greater(t, identifierInt, 0)
-		assert.LessOrEqual(t, identifierInt, maxNumberOfTargets)
+		assert.GreaterOrEqual(t, identifierInt, 0)
+		assert.Less(t, identifierInt, int(nspStream.GetMaxTargets()))
 		identifierSelected = identifier
 		return nil
 	})
@@ -258,12 +294,12 @@ func Test_Open_Concurrent_NoIdentifierAvailable(t *testing.T) {
 		return nil
 	})
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.NotNil(t, err)
 }
 
@@ -281,8 +317,17 @@ func Test_Open_Refresh(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 1
 	var createdTarget *nspAPI.Target
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 1,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -296,7 +341,7 @@ func Test_Open_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		createdTarget = target
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{createdTarget}, nil)
 		return nil
@@ -307,7 +352,7 @@ func Test_Open_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_ENABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		createdTarget = target
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{createdTarget}, nil)
 		return nil
@@ -318,20 +363,20 @@ func Test_Open_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_ENABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		createdTarget = target
 		return nil
 	}).After(secondRegister)
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 }
 
@@ -349,8 +394,17 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		},
 	}
 	ips := []string{"172.16.0.1/24", "fd00::1/64"}
-	maxNumberOfTargets := 1
 	var createdTarget *nspAPI.Target
+	nspStream := &nspAPI.Stream{
+		Name:       s.GetName(),
+		MaxTargets: 1,
+		Conduit: &nspAPI.Conduit{
+			Name: s.GetConduit().GetName(),
+			Trench: &nspAPI.Trench{
+				Name: s.GetConduit().GetTrench().GetName(),
+			},
+		},
+	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -364,7 +418,7 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		createdTarget = target
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{createdTarget}, nil)
 		return nil
@@ -375,7 +429,7 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_ENABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{}, nil)
 		return nil
 	}).After(firstRegister)
@@ -385,7 +439,7 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_ENABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{}, nil)
 		return nil
 	}).After(secondRegister) // refresh
@@ -395,7 +449,7 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_DISABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		createdTarget = target
 		tr.EXPECT().GetTargets(gomock.Any(), gomock.Any()).Return([]*nspAPI.Target{createdTarget}, nil)
 		return nil
@@ -406,19 +460,19 @@ func Test_Open_Failed_Refresh(t *testing.T) {
 		assert.Equal(t, target.Status, nspAPI.Target_ENABLED)
 		identifier, exists := target.Context[types.IdentifierKey]
 		assert.True(t, exists)
-		assert.Equal(t, "1", identifier)
+		assert.Equal(t, "0", identifier)
 		return nil
 	}).After(fourthRegister)
 
-	strm, err := stream.New(s, nil, maxNumberOfTargets, cndt)
+	strm, err := stream.New(s, nil, cndt)
 	assert.Nil(t, err)
 	assert.NotNil(t, strm)
 	strm.TargetRegistry = tr
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 
-	err = strm.Open(context.TODO())
+	err = strm.Open(context.TODO(), nspStream)
 	assert.Nil(t, err)
 }
 

@@ -274,7 +274,7 @@ func newSimpleNetworkService(
 	lbFactory types.NFQueueLoadBalancerFactory,
 	nfa types.NFAdaptor,
 ) *SimpleNetworkService {
-	identifierOffsetGenerator := NewIdentifierOffsetGenerator(2000)
+	identifierOffsetGenerator := NewIdentifierOffsetGenerator(300)
 	simpleNetworkService := &SimpleNetworkService{
 		Conduit:                     conduit,
 		targetRegistryClient:        targetRegistryClient,

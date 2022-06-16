@@ -57,11 +57,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	M = 9973
-	N = 100
-)
-
 func printHelp() {
 	fmt.Println(`
 load-balancer --
@@ -230,6 +225,7 @@ type SimpleNetworkService struct {
 	*nspAPI.Conduit
 	targetRegistryClient        nspAPI.TargetRegistryClient
 	ConfigurationManagerClient  nspAPI.ConfigurationManagerClient
+	IdentifierOffsetGenerator   *IdentifierOffsetGenerator
 	interfaces                  sync.Map
 	ctx                         context.Context
 	streams                     map[string]types.Stream
@@ -278,10 +274,12 @@ func newSimpleNetworkService(
 	lbFactory types.NFQueueLoadBalancerFactory,
 	nfa types.NFAdaptor,
 ) *SimpleNetworkService {
+	identifierOffsetGenerator := NewIdentifierOffsetGenerator(2000)
 	simpleNetworkService := &SimpleNetworkService{
 		Conduit:                     conduit,
 		targetRegistryClient:        targetRegistryClient,
 		ConfigurationManagerClient:  configurationManagerClient,
+		IdentifierOffsetGenerator:   identifierOffsetGenerator,
 		ctx:                         ctx,
 		netUtils:                    netUtils,
 		nfqueueIndex:                1,
@@ -452,11 +450,10 @@ func (sns *SimpleNetworkService) addStream(strm *nspAPI.Stream) error {
 		strm,
 		sns.targetRegistryClient,
 		sns.ConfigurationManagerClient,
-		M,
-		N,
 		sns.nfqueueIndex,
 		sns.netUtils,
 		sns.lbFactory,
+		sns.IdentifierOffsetGenerator.Generate(strm),
 	)
 	if err != nil {
 		return err
@@ -478,6 +475,7 @@ func (sns *SimpleNetworkService) deleteStream(streamName string) error {
 	if !exists {
 		return nil
 	}
+	sns.IdentifierOffsetGenerator.Release(streamName)
 	err := stream.Delete()
 	delete(sns.streams, streamName)
 	return err

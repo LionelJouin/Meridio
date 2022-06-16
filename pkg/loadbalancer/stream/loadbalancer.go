@@ -39,6 +39,7 @@ type LoadBalancer struct {
 	*nspAPI.Stream
 	TargetRegistryClient       nspAPI.TargetRegistryClient
 	ConfigurationManagerClient nspAPI.ConfigurationManagerClient
+	IdentifierOffset           int
 	nfqlb                      types.NFQueueLoadBalancer
 	nfth                       types.NftHandler
 	flows                      map[string]types.Flow
@@ -57,12 +58,13 @@ func New(
 	stream *nspAPI.Stream,
 	targetRegistryClient nspAPI.TargetRegistryClient,
 	configurationManagerClient nspAPI.ConfigurationManagerClient,
-	m int,
-	n int,
 	nfqueue int,
 	netUtils networking.Utils,
 	lbFactory types.NFQueueLoadBalancerFactory,
+	identifierOffset int,
 ) (types.Stream, error) {
+	n := int(stream.GetMaxTargets())
+	m := int(stream.GetMaxTargets()) * 100
 	nfqlb, err := lbFactory.New(stream.GetName(), m, n)
 	if err != nil {
 		return nil, err
@@ -76,6 +78,7 @@ func New(
 		Stream:                     stream,
 		TargetRegistryClient:       targetRegistryClient,
 		ConfigurationManagerClient: configurationManagerClient,
+		IdentifierOffset:           identifierOffset,
 		flows:                      make(map[string]types.Flow),
 		nfqlb:                      nfqlb,
 		nfth:                       nfth,
@@ -164,7 +167,7 @@ func (lb *LoadBalancer) AddTarget(target types.Target) error {
 	if exists {
 		return errors.New("the target is already registered")
 	}
-	err := target.Configure() // TODO: avoid multiple identical ip rule entries (e.g. after container crash)
+	err := target.Configure(lb.IdentifierOffset) // TODO: avoid multiple identical ip rule entries (e.g. after container crash)
 	if err != nil {
 		lb.addPendingTarget(target)
 		returnErr := err
@@ -174,7 +177,7 @@ func (lb *LoadBalancer) AddTarget(target types.Target) error {
 		}
 		return returnErr
 	}
-	err = lb.nfqlb.Activate(target.GetIdentifier())
+	err = lb.nfqlb.Activate(target.GetIdentifier(), target.GetIdentifier()+lb.IdentifierOffset)
 	if err != nil {
 		lb.addPendingTarget(target)
 		returnErr := err

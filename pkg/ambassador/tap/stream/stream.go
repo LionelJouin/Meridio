@@ -37,11 +37,9 @@ type Stream struct {
 	Stream         *ambassadorAPI.Stream
 	TargetRegistry TargetRegistry
 	// Contains Function to get the IPs of the conduit
-	Conduit Conduit
-	// Maximum number of targets registered in this stream
-	MaxNumberOfTargets int
-	identifier         int
-	targetStatus       nspAPI.Target_Status
+	Conduit      Conduit
+	identifier   int
+	targetStatus nspAPI.Target_Status
 	// When opening the stream, the IPs are save, so, if the IPs of the conduit are changed
 	// before closing, this IP list will be used.
 	ips []string
@@ -52,16 +50,14 @@ type Stream struct {
 // Can return an error if the stream is invalid.
 func New(stream *ambassadorAPI.Stream,
 	targetRegistryClient nspAPI.TargetRegistryClient,
-	maxNumberOfTargets int,
 	conduit Conduit) (*Stream, error) {
 	// todo: check if stream valid
 	s := &Stream{
-		Stream:             stream,
-		TargetRegistry:     newTargetRegistryImpl(targetRegistryClient),
-		Conduit:            conduit,
-		MaxNumberOfTargets: maxNumberOfTargets,
-		identifier:         -1,
-		targetStatus:       nspAPI.Target_DISABLED,
+		Stream:         stream,
+		TargetRegistry: newTargetRegistryImpl(targetRegistryClient),
+		Conduit:        conduit,
+		identifier:     -1,
+		targetStatus:   nspAPI.Target_DISABLED,
 	}
 	return s, nil
 }
@@ -69,18 +65,18 @@ func New(stream *ambassadorAPI.Stream,
 // Open the stream in the conduit by generating a identifier and registering
 // the target to the NSP service while avoiding the identifier collisions.
 // If success, no error will be returned.
-func (s *Stream) Open(ctx context.Context) error {
+func (s *Stream) Open(ctx context.Context, nspStream *nspAPI.Stream) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.ips = s.Conduit.GetIPs()
 	if len(s.ips) <= 0 {
 		return errors.New("ips not set")
 	}
-	if s.targetStatus == nspAPI.Target_ENABLED && s.isIdentifierInRange(1, s.MaxNumberOfTargets) {
-		return s.refresh(ctx)
+	if s.targetStatus == nspAPI.Target_ENABLED && s.isIdentifierInRange(0, int(nspStream.GetMaxTargets())-1) {
+		return s.refresh(ctx, nspStream)
 	}
 	logrus.Infof("Attempt to open stream: %v", s.Stream)
-	err := s.open(ctx)
+	err := s.open(ctx, nspStream)
 	if err != nil {
 		return err
 	}
@@ -112,14 +108,14 @@ func (s *Stream) GetStream() *ambassadorAPI.Stream {
 	return s.Stream
 }
 
-func (s *Stream) setIdentifier(exclusionList []string) {
+func (s *Stream) setIdentifier(exclusionList []string, maxTargets int) {
 	exclusionListMap := make(map[string]struct{})
 	for _, item := range exclusionList {
 		exclusionListMap[item] = struct{}{}
 	}
-	for !s.isIdentifierValid(exclusionListMap, 1, s.MaxNumberOfTargets) {
+	for !s.isIdentifierValid(exclusionListMap, 0, maxTargets) {
 		rand.Seed(time.Now().UnixNano())
-		s.identifier = rand.Intn(s.MaxNumberOfTargets) + 1
+		s.identifier = rand.Intn(maxTargets)
 	}
 }
 
@@ -149,9 +145,7 @@ func (s *Stream) getIdentifiersInUse(ctx context.Context) ([]string, error) {
 	targets, err := s.TargetRegistry.GetTargets(context, &nspAPI.Target{
 		Status: nspAPI.Target_ANY,
 		Type:   nspAPI.Target_DEFAULT,
-		Stream: &nspAPI.Stream{
-			Conduit: s.Stream.GetConduit().ToNSP(),
-		},
+		Stream: s.Stream.ToNSP(),
 	})
 	if err != nil {
 		return identifiers, err
@@ -173,20 +167,22 @@ func (s *Stream) getTarget() *nspAPI.Target {
 	}
 }
 
-func (s *Stream) open(ctx context.Context) error {
+func (s *Stream) open(ctx context.Context, nspStream *nspAPI.Stream) error {
 	// Get identifiers in use (it includes the enabled and disabled entries)
 	identifiersInUse, err := s.getIdentifiersInUse(ctx)
 	if err != nil {
 		return err
 	}
 	// Check if any identifier is available to be registered with
-	if len(identifiersInUse) >= s.MaxNumberOfTargets {
+	// TODO: verify if all targets have a valid identifier, some might have empty context or an
+	// invalid identifier, so some (identifiers) might still be available.
+	if len(identifiersInUse) >= int(nspStream.GetMaxTargets()) {
 		return errors.New("no identifier available to register the target")
 	}
 	if s.targetStatus != nspAPI.Target_DISABLED {
 		return nil
 	}
-	s.setIdentifier(identifiersInUse)
+	s.setIdentifier(identifiersInUse, int(nspStream.GetMaxTargets()))
 	// register the target as disabled status
 	err = s.TargetRegistry.Register(ctx, s.getTarget())
 	if err != nil {
@@ -202,7 +198,9 @@ func (s *Stream) open(ctx context.Context) error {
 			return err
 		}
 		// Check if any identifier is available to be registered with
-		if len(identifiersInUse) > s.MaxNumberOfTargets {
+		// TODO: verify if all targets have a valid identifier, some might have empty context or an
+		// invalid identifier, so some (identifiers) might still be available.
+		if len(identifiersInUse) > int(nspStream.GetMaxTargets()) {
 			err = errors.New("no identifier available to register the target")
 			errUnregister := s.TargetRegistry.Unregister(ctx, s.getTarget())
 			if errUnregister != nil {
@@ -217,7 +215,7 @@ func (s *Stream) open(ctx context.Context) error {
 			break
 		}
 		// Update the target with a new available identifier
-		s.setIdentifier(identifiersInUse)
+		s.setIdentifier(identifiersInUse, int(nspStream.GetMaxTargets()))
 		err = s.TargetRegistry.Register(ctx, s.getTarget())
 		if err != nil {
 			return err
@@ -232,7 +230,7 @@ func (s *Stream) open(ctx context.Context) error {
 	return nil
 }
 
-func (s *Stream) refresh(ctx context.Context) error {
+func (s *Stream) refresh(ctx context.Context, nspStream *nspAPI.Stream) error {
 	err := s.TargetRegistry.Register(ctx, s.getTarget())
 	if err != nil {
 		return err
@@ -240,9 +238,7 @@ func (s *Stream) refresh(ctx context.Context) error {
 	targets, err := s.TargetRegistry.GetTargets(ctx, &nspAPI.Target{
 		Status: nspAPI.Target_ANY,
 		Type:   nspAPI.Target_DEFAULT,
-		Stream: &nspAPI.Stream{
-			Conduit: s.Stream.GetConduit().ToNSP(),
-		},
+		Stream: s.Stream.ToNSP(),
 	})
 	if err != nil {
 		return err
@@ -268,7 +264,7 @@ func (s *Stream) refresh(ctx context.Context) error {
 	// updated to ENABLED). The target then has to call open function.
 	s.targetStatus = nspAPI.Target_DISABLED
 	s.identifier = -1
-	return s.open(ctx)
+	return s.open(ctx, nspStream)
 }
 
 func sameIps(ipsA []string, ipsB []string) bool {

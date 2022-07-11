@@ -16,6 +16,11 @@ limitations under the License.
 
 package v1
 
+import (
+	"crypto/sha256"
+	"fmt"
+)
+
 func (t *Trench) Equals(t2 *Trench) bool {
 	if t == nil || t2 == nil {
 		return false
@@ -128,7 +133,7 @@ func (f *Flow) DeepEquals(f2 *Flow) bool {
 		return vipSlice
 	}
 	return f.Equals(f2) &&
-		f.LocalPort == f2.LocalPort &&
+		Hash(f.DestinationPortNats) == Hash(f2.DestinationPortNats) &&
 		f.Priority == f2.Priority &&
 		compareSlice(f.GetDestinationPortRanges(), f2.GetDestinationPortRanges()) &&
 		compareSlice(f.GetProtocols(), f2.GetProtocols()) &&
@@ -169,4 +174,10 @@ func compareSlice(a, b []string) bool {
 	}
 
 	return true
+}
+
+func Hash(o interface{}) string {
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprintf("%v", o)))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

@@ -109,10 +109,21 @@ func ConvertFlows(flows []*Flow, streams []*nspAPI.Stream, vips []*nspAPI.Vip) [
 			Priority:              flow.Priority,
 			Stream:                s,
 			Vips:                  getVips(flow.Vips, vips),
-			LocalPort:             uint32(flow.LocalPort),
+			DestinationPortNats:   ConvertPortNats(flow.DestinationPortNats),
 		})
 	}
 	return resFlows
+}
+
+func ConvertPortNats(portNats []*PortNat) []*nspAPI.Flow_PortNat {
+	resPortNats := []*nspAPI.Flow_PortNat{}
+	for _, portNat := range portNats {
+		resPortNats = append(resPortNats, &nspAPI.Flow_PortNat{
+			Port:      uint32(portNat.Port),
+			LocalPort: uint32(portNat.LocalPort),
+		})
+	}
+	return resPortNats
 }
 
 func ConvertVips(vips []*Vip, trench *nspAPI.Trench) []*nspAPI.Vip {

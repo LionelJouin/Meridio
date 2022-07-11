@@ -43,15 +43,20 @@ type FlowList struct {
 }
 
 type Flow struct {
-	Name                  string   `yaml:"name"`
-	SourceSubnets         []string `yaml:"source-subnets"`
-	DestinationPortRanges []string `yaml:"destination-port-ranges"`
-	SourcePortRanges      []string `yaml:"source-port-ranges"`
-	Protocols             []string `yaml:"protocols"`
-	Vips                  []string `yaml:"vips"`
-	Priority              int32    `yaml:"priority"`
-	Stream                string   `yaml:"stream"`
-	LocalPort             uint16   `yaml:"local-port,omitempty"`
+	Name                  string     `yaml:"name"`
+	SourceSubnets         []string   `yaml:"source-subnets"`
+	DestinationPortRanges []string   `yaml:"destination-port-ranges"`
+	SourcePortRanges      []string   `yaml:"source-port-ranges"`
+	Protocols             []string   `yaml:"protocols"`
+	Vips                  []string   `yaml:"vips"`
+	Priority              int32      `yaml:"priority"`
+	Stream                string     `yaml:"stream"`
+	DestinationPortNats   []*PortNat `yaml:"destination-port-nats,omitempty"`
+}
+
+type PortNat struct {
+	Port      uint16 `yaml:"port"`
+	LocalPort uint16 `yaml:"local-port"`
 }
 
 type VipList struct {

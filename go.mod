@@ -18,13 +18,13 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/vishvananda/netlink v1.1.1-0.20220118170537-d6b03fdeb845
 	go.uber.org/goleak v1.1.12
 	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7
 	golang.org/x/tools v0.1.9 // indirect
-	google.golang.org/grpc v1.42.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/grpc v1.46.0
+	google.golang.org/protobuf v1.28.0
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.3
@@ -42,3 +42,9 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
 )
+
+// https://github.com/Nordix/go-spiffe/commit/8666009a0f65d94256bbc20bf382f677a2baa3ce
+// go get github.com/nordix/go-spiffe/v2@8666009a0f65d94256bbc20bf382f677a2baa3ce
+// go mod edit -replace="github.com/spiffe/go-spiffe/v2@v2.0.0=github.com/nordix/go-spiffe/v2@v2.1.2-0.20220712151211-8666009a0f65"
+
+replace github.com/spiffe/go-spiffe/v2 v2.0.0 => github.com/nordix/go-spiffe/v2 v2.1.2-0.20220712151211-8666009a0f65

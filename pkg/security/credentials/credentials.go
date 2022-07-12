@@ -2,6 +2,7 @@ package credentials
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffegrpc/grpccredentials"
@@ -14,13 +15,13 @@ import (
 func GetClient(ctx context.Context) credentials.TransportCredentials {
 	source := GetX509Source(ctx)
 	tlsAuthorizer := tlsconfig.AuthorizeAny()
-	return grpccredentials.MTLSClientCredentials(source, source, tlsAuthorizer)
+	return grpccredentials.MTLSClientCredentials(source, source, tlsAuthorizer, WithTLSVersion(tls.VersionTLS13))
 }
 
 func GetServer(ctx context.Context) credentials.TransportCredentials {
 	source := GetX509Source(ctx)
 	tlsAuthorizer := tlsconfig.AuthorizeAny()
-	return grpccredentials.MTLSServerCredentials(source, source, tlsAuthorizer)
+	return grpccredentials.MTLSServerCredentials(source, source, tlsAuthorizer, WithTLSVersion(tls.VersionTLS13))
 }
 
 func GetServerWithSource(ctx context.Context, source *workloadapi.X509Source) credentials.TransportCredentials {
@@ -41,4 +42,10 @@ func GetX509Source(ctx context.Context) *workloadapi.X509Source {
 	}
 	logrus.Infof("sVID: %q", svid.ID)
 	return source
+}
+
+func WithTLSVersion(tlsVerion uint16) tlsconfig.Option {
+	return func(opts *tlsconfig.Options) {
+		opts.TlsConfig.MinVersion = tlsVerion
+	}
 }

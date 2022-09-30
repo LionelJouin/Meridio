@@ -26,9 +26,9 @@ https://www.cni.dev/plugins/current/main/bridge/). The external
 intercace must be created and attached to the bridge. An example with vlan;
 
 ```
-ip link add link eth0 name eth.100 type vlan id 100
-echo 0 > /proc/sys/net/ipv6/conf/eth.100/accept_dad
-ip link set up dev eth.100
+ip link add link eth0 name eth0.100 type vlan id 100
+echo 0 > /proc/sys/net/ipv6/conf/eth0.100/accept_dad
+ip link set up dev eth0.100
 ip link set dev eth0.100 master cbr2
 ```
 

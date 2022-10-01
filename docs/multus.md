@@ -23,7 +23,7 @@ To connect several FEs to the same external network we can use a Linux
 
 With Multus this is easily done with the [bridge cni-plugin](
 https://www.cni.dev/plugins/current/main/bridge/). The external
-intercace must be created and attached to the bridge. An example with vlan;
+interface must be created and attached to the bridge. An example with vlan;
 
 ```
 ip link add link eth0 name eth0.100 type vlan id 100

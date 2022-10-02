@@ -42,23 +42,25 @@ check_kind() {
 		die "KinD cluster is not running; $KIND_CLUSTER_NAME"
 	checked=yes
 }
-#   create_vlan_and_bridge
+#   create_vlan_and_bridge <bridge> <iface> <vlan>
 #     Create a bridge and a vlan interface on eth0.
 #     NOTE: This must run as root on a KinD node!
 cmd_create_vlan_and_bridge() {
-	test -n "$2" || die "No tag"
+	test -n "$2" || die "Parameter missing"
 	whoami | grep -q root || die "Must run as root"
 	local br=$1
-	local iface=eth0.$2
+	local iface=$2
+	local vlan=$3
+	local dev=$iface.$vlan
 
 	ip link add name $br type bridge
 	echo 0 > /proc/sys/net/ipv6/conf/$br/accept_dad
 	ip link set up dev $br
 
-	ip link add link eth0 name $iface type vlan id 100
-	echo 0 > /proc/sys/net/ipv6/conf/$iface/accept_dad
-	ip link set up dev $iface
-	ip link set dev $iface master $br
+	ip link add link $iface name $dev type vlan id $vlan
+	echo 0 > /proc/sys/net/ipv6/conf/$dev/accept_dad
+	ip link set up dev $dev
+	ip link set dev $dev master $br
 }
 # 
 emit_nad() {
@@ -66,16 +68,32 @@ emit_nad() {
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: $1
+  name: meridio-100
 spec:
   config: '{
     "cniVersion": "0.4.0",
     "type": "bridge",
-    "bridge": "$2",
+    "bridge": "br1",
     "isGateway": true,
     "ipam": {
       "type": "node-annotation",
-      "annotation": "meridio/$2"
+      "annotation": "meridio-br1"
+    }
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: meridio-200
+spec:
+  config: '{
+    "cniVersion": "0.4.0",
+    "type": "bridge",
+    "bridge": "br2",
+    "isGateway": true,
+    "ipam": {
+      "type": "node-annotation",
+      "annotation": "meridio-br2"
     }
   }'
 EOF
@@ -91,25 +109,42 @@ cmd_multus_prepare() {
 	check_kind
 	mkdir -p $tmp
 	kubectl apply -f $dir/manifest/multus-install.yaml || die "Install Multus"
-	local w i=0 s e br=br1
+	local w i=0
 	for w in $(kind --name=$KIND_CLUSTER_NAME get nodes); do
 		echo $w | grep -q control-plane && continue
-		docker cp $dir/$prg $w:bin     # Copy myself
-		docker exec $w /bin/$prg create_vlan_and_bridge $br 100  # Run myself
+
 		kind get kubeconfig --internal | \
 			docker exec -i $w tee /etc/kubernetes/kubeconfig > /dev/null
-		echo "{ \"kubeconfig\": \"/etc/kubernetes/kubeconfig\" }" | \
+		echo "{ \"kubeconfig\": \"/etc/kubernetes/kubeconfig\", \"log\":\"/var/log/node-annotation\" }" | \
 			docker exec -i $w tee /etc/cni/node-annotation.conf > /dev/null
-		s=$((i*8))
-		e=$((s+7))
-		kubectl annotate node $w meridio/$br="\"ranges\": [
-  [{ \"subnet\":\"100:100::/120\", \"rangeStart\":\"100:100::$s\" , \"rangeEnd\":\"100:100::$e\"}],
-  [{ \"subnet\":\"169.254.100.0/24\", \"rangeStart\":\"169.254.100.$s\" , \"rangeEnd\":\"169.254.100.$e\"}]
-]"
+
+		docker cp $dir/$prg $w:bin     # Copy myself
+		docker exec $w /bin/$prg create_vlan_and_bridge br1 eth0 100
+		annotate $w $i br1
+		docker exec $w /bin/$prg create_vlan_and_bridge br2 eth0 200
+		annotate $w $i br2
+
 		i=$((i+1))
 	done
-	emit_nad meridio-100 $br > $tmp/nad
+
+	emit_nad > $tmp/nad
 	kubectl apply -f $tmp/nad || die "Create NAD"
+}
+# annotate <worker> <index> <bridge>
+annotate() {
+	local w=$1
+	local i=$2
+	local br=$3
+	
+	local s e gw
+	s=$((i*8+2))   # Start; Leave room for the GW
+	e=$((s+5))
+	gw=$((i*8+1))
+
+	kubectl annotate node $w meridio-$br="\"ranges\": [
+  [{ \"subnet\":\"100:100::/64\", \"rangeStart\":\"100:100::$s\" , \"rangeEnd\":\"100:100::$e\", \"gateway\":\"100:100::$gw\"}],
+  [{ \"subnet\":\"169.254.100.0/24\", \"rangeStart\":\"169.254.100.$s\" , \"rangeEnd\":\"169.254.100.$e\", \"gateway\":\"169.254.100.$gw\"}]
+]"
 }
 
 ##

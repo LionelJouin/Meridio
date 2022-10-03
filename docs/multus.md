@@ -35,3 +35,9 @@ ip link set dev eth0.100 master cbr2
 It doesn't matter if the load-balancer PODs belong to different trenches.
 
 
+## Multus in e2e test
+
+Setup in KinD;
+
+<img src="resources/multus-kind.svg" width="60%" />
+

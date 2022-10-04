@@ -41,3 +41,8 @@ Setup in KinD;
 
 <img src="resources/multus-kind.svg" width="60%" />
 
+Prepare a started KinD cluster for e2e test with Multus;
+```
+./test/e2e/meridio-e2e.sh  # Help printout
+./test/e2e/meridio-e2e.sh multus_prepare
+```

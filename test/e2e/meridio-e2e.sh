@@ -55,6 +55,7 @@ cmd_create_vlan_and_bridge() {
 
 	ip link add name $br type bridge
 	echo 0 > /proc/sys/net/ipv6/conf/$br/accept_dad
+	echo 0 > /proc/sys/net/ipv4/conf/$br/rp_filter
 	ip link set up dev $br
 
 	ip link add link $iface name $dev type vlan id $vlan
@@ -102,9 +103,9 @@ EOF
 ##     Prepare a started KinD cluster for e2e test with Multus.
 ##      - Install Multus
 ##      - Create bridges and vlan interfaces
-##      - Install kubeconfig and configure node-annoration ipam on workers
+##      - Install kubeconfig and configure node-annotation ipam on workers
 ##      - Annotate worker nodes with ranges
-##      - Create NAD's in namespace "default"
+##      - Create NAD's "meridio-100" and "meridio-200" in namespace "default"
 cmd_multus_prepare() {
 	check_kind
 	mkdir -p $tmp
@@ -138,9 +139,11 @@ annotate() {
 	
 	local s e gw
 	s=$((i*8+2))   # Start; Leave room for the GW
-	e=$((s+5))
+	e=$((i*8+6))
 	gw=$((i*8+1))
+	#test "$br" = "br2" && gw=$((i*8+7))
 
+	# \"gateway\":\"100:100::$gw\" \"gateway\":\"169.254.100.$gw\"
 	kubectl annotate node $w meridio-$br="\"ranges\": [
   [{ \"subnet\":\"100:100::/64\", \"rangeStart\":\"100:100::$s\" , \"rangeEnd\":\"100:100::$e\", \"gateway\":\"100:100::$gw\"}],
   [{ \"subnet\":\"169.254.100.0/24\", \"rangeStart\":\"169.254.100.$s\" , \"rangeEnd\":\"169.254.100.$e\", \"gateway\":\"169.254.100.$gw\"}]

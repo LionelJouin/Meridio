@@ -20,8 +20,8 @@ import (
 	"net"
 	"time"
 
-	meridiov1alpha1 "github.com/nordix/meridio-operator/api/v1alpha1"
-	"github.com/nordix/meridio-operator/controllers/common"
+	meridiov1alpha1 "github.com/nordix/meridio/api/v1alpha1"
+	"github.com/nordix/meridio/controllers/common"
 	"github.com/nordix/meridio/pkg/configuration/reader"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

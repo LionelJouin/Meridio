@@ -63,9 +63,9 @@ make e2e NAMESPACE="red"
 
 ### Trench
 
-A [trench](https://github.com/Nordix/Meridio-Operator/blob/master/config/samples/meridio_v1alpha1_trench.yaml) spawns the IPAM, NSP pods, and needed role, role-binding and service accounts, and the ConfigMap storing configuration of the trench. The resources created by a trench will be suffixed with the trench's name.
+A [trench](https://github.com/Nordix/Meridio/blob/master/config/samples/meridio_v1alpha1_trench.yaml) spawns the IPAM, NSP pods, and needed role, role-binding and service accounts, and the ConfigMap storing configuration of the trench. The resources created by a trench will be suffixed with the trench's name.
 
-To see how to configure a trench, please refer to [trench spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#TrenchSpec).
+To see how to configure a trench, please refer to [trench spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#TrenchSpec).
 
 ```bash
 $ kubectl apply -f ./config/samples/meridio_v1alpha1_trench.yaml
@@ -102,7 +102,7 @@ To be noted, meridio-operator currently have a limitation to have one attractor 
 
 An attractor is a resource needs to be created with label. `metadata.labels.trench` specifies the owner trench of the attractor.
 
-To see how to configure and read the status of an attractor, please refer to [attractor spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#AttractorSpec) and [attractor status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#AttractorStatus).
+To see how to configure and read the status of an attractor, please refer to [attractor spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#AttractorSpec) and [attractor status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#AttractorStatus).
 
 ```bash
 kubectl apply -f ./config/samples/meridio_v1alpha1_attractor.yaml
@@ -127,7 +127,7 @@ attr1   eth0.100         nsm-vlan         ["gateway1","gateway2"]   ["vip1","vip
 
 A gateway is a resource to describe the gateway information for the Meridio Front-ends.It must be created with label `metadata.labels.trench` to specify its owner reference trench.
 
-To see how to configure and read the status of a gateway, please refer to [gateway spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#GatewaySpec) and [gateway status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#GatewayStatus).
+To see how to configure and read the status of a gateway, please refer to [gateway spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#GatewaySpec) and [gateway status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#GatewayStatus).
 
 In the example below, two gateways will be created.
 
@@ -146,7 +146,7 @@ gateway2   1000::1   bgp        trench-a
 
 A Vip is a resource to reserving the destination addresses for the target applications.It must be created with label `metadata.labels.trench` to specify its owner reference trench.
 
-To see how to configure and read the status of a Vip, please refer to [Vip spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#VipSpec) and [Vip status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#VipStatus).
+To see how to configure and read the status of a Vip, please refer to [Vip spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#VipSpec) and [Vip status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#VipStatus).
 
 In the example below, two Vips will be created.
 
@@ -166,7 +166,7 @@ vip2   10.0.0.1/32   trench-a
 A Conduit is for configuring the load balancer type. It must be created with label `metadata.labels.trench` to specify its owner reference trench.
 There is a limitation that a conduit must be created when one attractor is created in the same trench. Meridio only supports one conduit per trench now.
 
-To see how to configure and read the status of a Conduit, please refer to [Conduit spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#ConduitSpec) and [Conduit status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#ConduitStatus).
+To see how to configure and read the status of a Conduit, please refer to [Conduit spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#ConduitSpec) and [Conduit status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#ConduitStatus).
 
 A Conduit can be created by following the example below.
 
@@ -195,7 +195,7 @@ conduit-stateless   stateless-lb   trench-a
 
 A Stream is for grouping different flows, and it can choose how traffic is load balanced by registering for a specific conduit. It must be created with label `metadata.labels.trench` to specify its owner reference trench.
 
-To see how to configure and read the status of a Stream, please refer to [Stream spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#StreamSpec) and [Stream status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#StreamStatus).
+To see how to configure and read the status of a Stream, please refer to [Stream spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#StreamSpec) and [Stream status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#StreamStatus).
 
 A Stream can be created by following the example below.
 
@@ -213,7 +213,7 @@ stream-1   conduit-stateless   trench-a
 
 A Flow enables the traffic to a selection of pods by specifying the 5-tuples and the Stream the traffic go through. It must be created with label `metadata.labels.trench` to specify its owner reference trench.
 
-To see how to configure and read the status of a Flow, please refer to [Flow spec](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#FlowSpec) and [Flow status](https://pkg.go.dev/github.com/nordix/meridio-operator/api/v1alpha1#FlowStatus).
+To see how to configure and read the status of a Flow, please refer to [Flow spec](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#FlowSpec) and [Flow status](https://pkg.go.dev/github.com/nordix/meridio/api/v1alpha1#FlowStatus).
 
 A Flow can be created by following the example below.
 
@@ -248,7 +248,7 @@ spec:
 
 For each container making up a specific custom resource (e.g. Trench) the annotation value for key _resource-template_ is interpreted as the name of a resource requirements template. Such templates are defined per container, and are to be specified before building the Operator.
 
-As an example some [templates](https://github.com/Nordix/Meridio-Operator/tree/master/config/manager/resource_requirements/) are included for each container out-of-the-box. But they are not verified to fit any production use cases, and can be overridden at will. (A template is basically a kubernetes [core v1 ResourceRequirements](https://pkg.go.dev/k8s.io/api@v0.22.2/core/v1#ResourceRequirements) block with name.)
+As an example some [templates](https://github.com/Nordix/Meridio/tree/master/config/manager/resource_requirements/) are included for each container out-of-the-box. But they are not verified to fit any production use cases, and can be overridden at will. (A template is basically a kubernetes [core v1 ResourceRequirements](https://pkg.go.dev/k8s.io/api@v0.22.2/core/v1#ResourceRequirements) block with name.)
 
 The Operator looks up the templates based on the annotation value for each container contributing to the particular custom resource. If a template is missing for a container, then deployment proceeds without setting resource requirements for the container at issue. Otherwise the related resources will be deployed by importing the respective resource requirements from the matching templates.
 

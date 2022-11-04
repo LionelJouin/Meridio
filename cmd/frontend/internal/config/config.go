@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	"github.com/nordix/meridio/cmd/frontend/internal/env"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/env"
 	"google.golang.org/grpc"
 )
 

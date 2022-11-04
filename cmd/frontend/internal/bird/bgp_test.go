@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
 
-	"github.com/nordix/meridio/cmd/frontend/internal/bird"
-	"github.com/nordix/meridio/cmd/frontend/internal/connectivity"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/bird"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/connectivity"
 )
 
 var extInterface string = `ext-vlan`

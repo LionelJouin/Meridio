@@ -27,11 +27,11 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/lioneljouin/meridio/cmd/proxy/internal/config"
+	"github.com/lioneljouin/meridio/cmd/proxy/internal/service"
 	nsmlog "github.com/networkservicemesh/sdk/pkg/tools/log"
 	ipamAPI "github.com/nordix/meridio/api/ipam/v1"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-	"github.com/nordix/meridio/cmd/proxy/internal/config"
-	"github.com/nordix/meridio/cmd/proxy/internal/service"
 	endpointOld "github.com/nordix/meridio/pkg/endpoint"
 	"github.com/nordix/meridio/pkg/health"
 	"github.com/nordix/meridio/pkg/health/connection"

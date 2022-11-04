@@ -1,4 +1,4 @@
-module github.com/nordix/meridio
+module github.com/lioneljouin/meridio
 
 go 1.19
 
@@ -15,6 +15,7 @@ require (
 	github.com/networkservicemesh/api v1.6.1
 	github.com/networkservicemesh/sdk v1.6.1
 	github.com/networkservicemesh/sdk-sriov v1.6.1
+	github.com/nordix/meridio v0.9.1-0.20221104140310-141efe66104f
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.1.5
 	github.com/onsi/gomega v1.20.1

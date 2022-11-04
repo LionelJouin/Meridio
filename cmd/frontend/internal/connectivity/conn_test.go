@@ -20,7 +20,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/nordix/meridio/cmd/frontend/internal/connectivity"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/connectivity"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
 )

@@ -30,10 +30,10 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"google.golang.org/grpc"
 
+	feConfig "github.com/lioneljouin/meridio/cmd/frontend/internal/config"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/env"
+	"github.com/lioneljouin/meridio/cmd/frontend/internal/frontend"
 	nspAPI "github.com/nordix/meridio/api/nsp/v1"
-	feConfig "github.com/nordix/meridio/cmd/frontend/internal/config"
-	"github.com/nordix/meridio/cmd/frontend/internal/env"
-	"github.com/nordix/meridio/cmd/frontend/internal/frontend"
 	"github.com/nordix/meridio/pkg/health"
 	"github.com/nordix/meridio/pkg/health/connection"
 	"github.com/nordix/meridio/pkg/log"

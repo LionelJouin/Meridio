@@ -19,6 +19,8 @@ package service
 import (
 	"context"
 
+	"github.com/lioneljouin/meridio/cmd/proxy/internal/client"
+	"github.com/lioneljouin/meridio/cmd/proxy/internal/config"
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
 	"github.com/networkservicemesh/api/pkg/api/networkservice/mechanisms/cls"
 	kernelmech "github.com/networkservicemesh/api/pkg/api/networkservice/mechanisms/kernel"
@@ -29,8 +31,6 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/kernel"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
-	"github.com/nordix/meridio/cmd/proxy/internal/client"
-	"github.com/nordix/meridio/cmd/proxy/internal/config"
 	"github.com/nordix/meridio/pkg/log"
 	"github.com/nordix/meridio/pkg/nsm"
 	"github.com/nordix/meridio/pkg/nsm/fullmeshtracker"
